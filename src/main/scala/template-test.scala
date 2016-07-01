@@ -5,8 +5,12 @@ import javax.xml.transform.stream._
 import javax.xml.transform.dom._
 
 import com.rackspace.cloud.api.wadl.Converters._
+import com.rackspace.cloud.api.wadl.util.LogErrorListener
 
 import net.sf.saxon.TransformerFactoryImpl
+import net.sf.saxon.Controller
+
+import scala.language.reflectiveCalls
 
 import scala.xml._
 
@@ -19,6 +23,8 @@ object TemplateTest {
     val f = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", this.getClass.getClassLoader)
     val cast = f.asInstanceOf[TransformerFactoryImpl]
     cast.getConfiguration.getDynamicLoader.setClassLoader(this.getClass.getClassLoader)
+    // Recover silently from recoverable errors. These may occur depending on XPath passed in.
+    f.setAttribute("http://saxon.sf.net/feature/recoveryPolicyName","recoverSilently")
     f
   }
 
@@ -27,8 +33,12 @@ object TemplateTest {
   //
   val setupTemplate = saxonTransformFactory.newTemplates(new StreamSource(getClass.getResource("/xsl/remove-element.xsl").toString))
 
-  def removeItems (xpath : String, /* The XPATH as a string */
+  def updateLinks (xpath : String, /* The XPATH as a string */
                    namespaces : Map[String, String], /* Namespaces prefix -> URI */
+                   uriIndex : Option[Int], /* An integer pointing to the index to replace or add */
+                   uriMarker : Option[String], /* The marker after which you remove/add a URI component */
+                   newComponent : Option[String], /* If set, we are adding the string as a new componet, otherwise we are removing */
+                   failOnMiss : Boolean = false, /* Fail if the XPath does't match anything */
                    source : Source, /* The XML Source */
                    result : Result  /* The XML Result -- with items removed */
                  ) = {
@@ -47,13 +57,29 @@ object TemplateTest {
          }
       </namespaces>
     ))
-    val removeXPathXSLTDomResult = new DOMResult()
-    setupTransformer.transform (new StreamSource(<ignore-input />), removeXPathXSLTDomResult)
+    setupTransformer.setParameter("failOnMiss", failOnMiss)
+    if (uriIndex.isDefined) setupTransformer.setParameter("uriIndex", uriIndex.get)
+    if (uriMarker.isDefined) setupTransformer.setParameter("uriMarker", uriMarker.get)
+    if (newComponent.isDefined) setupTransformer.setParameter("newComponent", newComponent.get)
+
+    //
+    //  Because the XSLT can produce errors now, we need to add an error listener.
+    //  Here we use the one from WADL tools, it looks at the format of the message
+    //  based on how it's written it logs the error using slf4j and if it's an actual
+    //  error throws a SAXParseException
+    //
+    //  https://github.com/rackerlabs/wadl-tools/blob/master/src/main/scala/util/log-error-listener.scala
+
+    setupTransformer.asInstanceOf[Controller].addLogErrorListener
+
+
+    val updateXPathXSLTDomResult = new DOMResult()
+    setupTransformer.transform (new StreamSource(<ignore-input />), updateXPathXSLTDomResult)
 
     //
     //  We now get saxon to compile the xslt we generated...
     //
-    val removeXPathTransform = saxonTransformFactory.newTemplates(new DOMSource(removeXPathXSLTDomResult.getNode()))
+    val updateXPathTransform = saxonTransformFactory.newTemplates(new DOMSource(updateXPathXSLTDomResult.getNode()))
 
 
     //
@@ -69,6 +95,8 @@ object TemplateTest {
     //  https://github.com/Rackerlabs/api-checker/blob/master/core/src/main/scala/com/rackspace/com/papi/components/checker/util/TransformPool.scala
     //
 
-    removeXPathTransform.newTransformer.transform(source, result)
+    val updateXPathTransformer = updateXPathTransform.newTransformer
+    updateXPathTransformer.asInstanceOf[Controller].addLogErrorListener
+    updateXPathTransformer.transform (source, result)
   }
 }
