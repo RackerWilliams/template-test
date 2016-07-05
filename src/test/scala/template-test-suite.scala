@@ -72,6 +72,54 @@ class TemplateTestSpec extends BaseWADLSpec {
     }
 
 
+    scenario ("drop element based on a bad index") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link>http://www.rackspace.com/v1.0/37778/path/to/widget</link>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link", Map("foo" -> "http://www.foo.com/foo"),
+                               Some(55), /* index */
+                               None,    /* URI marker */
+                               None,    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link)")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+    scenario ("drop element based on a bad marker") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link>http://www.rackspace.com/v1.0/37778/path/to/widget</link>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link", Map("foo" -> "http://www.foo.com/foo"),
+                               None, /* index */
+                               Some("WoogaBooga"),    /* URI marker */
+                               None,    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link)")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
     scenario ("from attribute based on an index") {
       val inInput = <foo xmlns="http://www.foo.com/foo">
            <baz />
@@ -115,6 +163,56 @@ class TemplateTestSpec extends BaseWADLSpec {
 
       val xmlOut = XML.loadString(bytesOut.toString())
       assert (xmlOut,"/foo:foo/foo:link/@href = 'http://www.rackspace.com/v1.0/path/to/widget'")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+    scenario ("drop attribute based on a bad index") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link href="http://www.rackspace.com/v1.0/37778/path/to/widget"/>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link/@href", Map("foo" -> "http://www.foo.com/foo"),
+                               Some(55), /* index */
+                               None,    /* URI marker */
+                               None,    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link/@href)")
+      assert (xmlOut,"/foo:foo/foo:link")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+    scenario ("drop attribute based on a bad marker") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link href="http://www.rackspace.com/v1.0/37778/path/to/widget"/>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link/@href", Map("foo" -> "http://www.foo.com/foo"),
+                               None, /* index */
+                               Some("WoogaBooga"),    /* URI marker */
+                               None,    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link/@href)")
+      assert (xmlOut,"/foo:foo/foo:link")
       assert (xmlOut,"/foo:foo/foo:baz")
       assert (xmlOut,"/foo:foo/foo:biz")
       assert (xmlOut,"/foo:foo/foo:bang")
@@ -222,6 +320,54 @@ class TemplateTestSpec extends BaseWADLSpec {
     }
 
 
+    scenario ("drop element based on bad index") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link>http://www.rackspace.com/v1.0/path/to/widget</link>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link", Map("foo" -> "http://www.foo.com/foo"),
+                               Some(55), /* index */
+                               None,    /* URI marker */
+                               Some("37778"), /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link)")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+    scenario ("drop element based on bad marker") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link>http://www.rackspace.com/v1.0/path/to/widget</link>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link", Map("foo" -> "http://www.foo.com/foo"),
+                               None, /* index */
+                               Some("WoogaBooga"),    /* URI marker */
+                               Some("37778"),    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link)")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
     scenario ("from attribute based on an index") {
       val inInput = <foo xmlns="http://www.foo.com/foo">
            <baz />
@@ -265,6 +411,57 @@ class TemplateTestSpec extends BaseWADLSpec {
 
       val xmlOut = XML.loadString(bytesOut.toString())
       assert (xmlOut,"/foo:foo/foo:link/@href = 'http://www.rackspace.com/v1.0/37778/path/to/widget'")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+
+    scenario ("drop attribute based on a bad index") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link href="http://www.rackspace.com/v1.0/path/to/widget"/>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link/@href", Map("foo" -> "http://www.foo.com/foo"),
+                               Some(55), /* index */
+                               None,    /* URI marker */
+                               Some("37778"),    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link/@href)")
+      assert (xmlOut,"/foo:foo/foo:link")
+      assert (xmlOut,"/foo:foo/foo:baz")
+      assert (xmlOut,"/foo:foo/foo:biz")
+      assert (xmlOut,"/foo:foo/foo:bang")
+    }
+
+    scenario ("drop attribute based on a bad marker") {
+      val inInput = <foo xmlns="http://www.foo.com/foo">
+           <baz />
+           <biz />
+           <link href="http://www.rackspace.com/v1.0/path/to/widget"/>
+           <bang />
+      </foo>
+      val bytesOut = new ByteArrayOutputStream()
+
+      TemplateTest.updateLinks("foo:link/@href", Map("foo" -> "http://www.foo.com/foo"),
+                               None, /* index */
+                               Some("WoogaBooga"),    /* URI marker */
+                               Some("37778"),    /* new Component */
+                               false,   /* Fail on miss */
+                               new StreamSource(inInput),
+                               new StreamResult(bytesOut))
+
+      val xmlOut = XML.loadString(bytesOut.toString())
+      assert (xmlOut,"empty(/foo:foo/foo:link/@href)")
+      assert (xmlOut,"/foo:foo/foo:link")
       assert (xmlOut,"/foo:foo/foo:baz")
       assert (xmlOut,"/foo:foo/foo:biz")
       assert (xmlOut,"/foo:foo/foo:bang")

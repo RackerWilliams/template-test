@@ -20,6 +20,9 @@
     <!-- Fail if the XPath doesn't match anything? -->
     <xsl:param name="failOnMiss" as="xs:boolean" select="false()"/>
 
+    <!-- DROP ELEMENT CODE: if the result of rax:process-url is this we drop what's in the path -->
+    <xsl:variable name="DROPCODE" as="xs:string" select="'[[DROP]]'"/>
+
     <!-- When you see xslout actually output xsl -->
     <xsl:namespace-alias stylesheet-prefix="xslout" result-prefix="xsl"/>
 
@@ -56,20 +59,23 @@
                 Modify things
             -->
             <xslout:template match="{$xpath}">
-                <xslout:choose>
-                    <xslout:when test=". instance of attribute()">
-                        <xslout:attribute>
-                            <xsl:attribute name="name">{local-name()}</xsl:attribute>
-                            <xslout:value-of select="rax:process-url(.)"/>
-                        </xslout:attribute>
-                    </xslout:when>
-                    <xslout:otherwise>
-                        <xslout:copy>
-                            <xslout:apply-templates select="@*"/>
-                            <xslout:value-of select="rax:process-url(.)"/>
-                        </xslout:copy>
-                    </xslout:otherwise>
-                </xslout:choose>
+                <xslout:variable name="processed" as="xs:string" select="rax:process-url(.)"/>
+                <xslout:if test="$processed != '{$DROPCODE}'">
+                    <xslout:choose>
+                        <xslout:when test=". instance of attribute()">
+                            <xslout:attribute>
+                                <xsl:attribute name="name">{local-name()}</xsl:attribute>
+                                <xslout:value-of select="$processed"/>
+                            </xslout:attribute>
+                        </xslout:when>
+                        <xslout:otherwise>
+                            <xslout:copy>
+                                <xslout:apply-templates select="@*"/>
+                                <xslout:value-of select="$processed"/>
+                            </xslout:copy>
+                        </xslout:otherwise>
+                    </xslout:choose>
+                </xslout:if>
             </xslout:template>
         </xslout:transform>
     </xsl:template>

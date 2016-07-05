@@ -36,10 +36,16 @@ object TemplateTest {
   val setupTemplate = saxonTransformFactory.newTemplates(new StreamSource(getClass.getResource("/xsl/remove-element.xsl").toString))
 
   val FIRST_INDEX : Int = 3
+  val DROP_CODE : String = "[[DROP]]"
 
   def getIndex(in : Array[String], uriIndex : Option[Int], uriMarker : Option[String]) : Int = {
     if (uriIndex != None) {
-      uriIndex.get+FIRST_INDEX
+      val retIndex = uriIndex.get+FIRST_INDEX
+      if (retIndex >= in.size) {
+        -1
+      } else {
+       retIndex
+      }
     } else {
       val idx = in.indexOf(uriMarker.get, FIRST_INDEX)
       if (idx == -1) {
@@ -55,7 +61,7 @@ object TemplateTest {
     val index = getIndex(uriComponents, uriIndex, uriMarker)
 
     if (index == -1) {
-      in
+      DROP_CODE
     } else {
       val a1 = uriComponents.slice (0, index)
       val a2 = uriComponents.slice (index+1, in.size)
@@ -69,7 +75,7 @@ object TemplateTest {
     val index = getIndex(uriComponents, uriIndex, uriMarker)
 
     if (index == -1) {
-      in
+      DROP_CODE
     } else {
       val a1 = uriComponents.slice (0, index)
       val a2 = Array(newComp)
