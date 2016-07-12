@@ -84,7 +84,7 @@ object TemplateTest {
     }
   }
 
-  def updateLinks (xpath : String, /* The XPATH as a string */
+  def updateLinks (xpaths : List[String], /* The XPATHs as a list of strings */
                    namespaces : Map[String, String], /* Namespaces prefix -> URI */
                    uriIndex : Option[Int], /* An integer pointing to the index to replace or add */
                    uriMarker : Option[String], /* The marker after which you remove/add a URI component */
@@ -109,7 +109,14 @@ object TemplateTest {
     //  compiling a new xslt based on the xpath and namespaces.
     //
     val setupTransformer = setupTemplate.newTransformer
-    setupTransformer.setParameter("xpath", xpath)
+    setupTransformer.setParameter("xpaths", new StreamSource(
+      <xpaths xmlns="http://www.rackspace.com/repose/params">
+         {
+            for (xpath <- xpaths) yield
+               <xpath>{xpath}</xpath>
+         }
+      </xpaths>
+    ))
     setupTransformer.setParameter("namespaces", new StreamSource(
       <namespaces xmlns="http://www.rackspace.com/repose/params">
          {
